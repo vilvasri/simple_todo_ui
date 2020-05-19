@@ -6,6 +6,7 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import EditIcon from '@material-ui/icons/Edit';
 
 import axios from 'axios';
+import API from './api';
 
 import './App.css';
 
@@ -28,12 +29,18 @@ class App extends Component {
 
   componentDidMount() {
       this.setState({ loading: true }, () => {
-        axios.get('https://9a359bc9-7192-4771-8430-2eab99c00d85.mock.pstmn.io/todos')
-        .then(response => 
+        API.get('todo/to-do-list/v1/list/2')
+        .then(response => {
+          if(response.status === 200) {
             this.setState({
               loading: false,
               todos: [...response.data.data],
             })
+          } else {
+            console.log(response.statusMessage);
+            this.setState({loading: false});
+          }
+        }
         )
         .catch(error => {
           console.log(error);
@@ -44,15 +51,61 @@ class App extends Component {
   saveTodo = () => e => {
     if(!this.state.currentTodo) { return; }
     if(this.state.isUpdate) {
-      const updatedTodoList = update(this.state.todos, {[this.state.updateIndex]: {title: {$set: this.state.currentTodo}}});
+      const updatedTodoList = update(this.state.todos, {[this.state.updateIndex]: {taskItem: {$set: this.state.currentTodo}}});
+      
+      /*
+      API.put(`todo/to-do-list/v1/list/${userId}/todo/${this.state.todos[this.state.updateIndex].taskId}`,
+        null, { params: {
+          taskItem: this.state.currentTodo
+        }})
+        .then(response => {
+          if(response.status === 200) {
+            this.setState({
+              todos: [...updatedTodoList]
+            });
+          } else {
+            console.log(response.statusMessage);
+            this.setState({loading: false});
+          }
+        }
+        )
+        .catch(error => {
+          console.log(error);
+        });
+      */
+
+      // Added inside axios callback
       this.setState({
         todos: [...updatedTodoList]
       });
     } else {
       const newTodo = {
-        title: this.state.currentTodo,
-        isComplete: false
+        taskItem: this.state.currentTodo,
+        completed: false
       }
+
+      /*
+      API.post(`todo/to-do-list/v1/list/${userId}`,
+        null, { params: {
+          taskItem: this.state.currentTodo
+        }})
+        .then(response => {
+          if(response.status === 200) {
+            this.setState({
+              todos: [...this.state.todos, newTodo]
+            });
+          } else {
+            console.log(response.statusMessage);
+            this.setState({loading: false});
+          }
+        }
+        )
+        .catch(error => {
+          console.log(error);
+        });
+      */
+
+      // Added inside axios callback
       this.setState({
         todos: [...this.state.todos, newTodo]
       });
@@ -67,7 +120,7 @@ class App extends Component {
 
   editTodo = (todoIndex) => e => {
     this.setState({
-      currentTodo: this.state.todos[todoIndex].title,
+      currentTodo: this.state.todos[todoIndex].taskItem,
       isUpdate: true,
       updateIndex: todoIndex,
       buttonName: 'Update'
@@ -77,9 +130,29 @@ class App extends Component {
 
   deleteTodo = (todoIndex) => e => {
     const updatedTodoList = update(this.state.todos, { $splice: [[todoIndex, 1]] } );
+
+    /*
+      API.delete(`todo/to-do-list/v1/list/${userId}/todo/${this.state.todos[todoIndex].taskId}`)
+        .then(response => {
+          if(response.status === 200) {
+            this.setState({
+              todos: [...updatedTodoList]
+            });
+          } else {
+            console.log(response.statusMessage);
+            this.setState({loading: false});
+          }
+        }
+        )
+        .catch(error => {
+          console.log(error);
+        });
+      */
+
+      // Added inside axios callback
     this.setState({
         todos: [...updatedTodoList]
-      });
+    });
     e.preventDefault();
   }
 
@@ -91,7 +164,30 @@ class App extends Component {
   }
 
   handleToggle = (todoIndex) => e => {
-    const updatedTodoList = update(this.state.todos, {[todoIndex]: {isComplete: {$set: !this.state.todos[todoIndex].isComplete}}});
+    const updatedTodoList = update(this.state.todos, {[todoIndex]: {completed: {$set: !this.state.todos[todoIndex].completed}}});
+    
+    /*
+      API.patch(`todo/to-do-list/v1/list/${userId}/todo/${this.state.todos[todoIndex].taskId}`,
+        null, { params: {
+          complete: !this.state.todos[todoIndex].completed
+        }})
+        .then(response => {
+          if(response.status === 200) {
+            this.setState({
+              todos: [...updatedTodoList]
+            });
+          } else {
+            console.log(response.statusMessage);
+            this.setState({loading: false});
+          }
+        }
+        )
+        .catch(error => {
+          console.log(error);
+        });
+      */
+
+      // Added inside axios callback
     this.setState({
       todos: [...updatedTodoList]
     });
@@ -114,11 +210,11 @@ class App extends Component {
               <List className="list">
               {this.state.todos.map((value, index) => (
                 <ListItem key={index} button>
-                  <ListItemText id={`checkbox-list-secondary-label-${index}`} primary={value.title} />
+                  <ListItemText id={`checkbox-list-secondary-label-${index}`} primary={value.taskItem} />
                   <ListItemSecondaryAction>
                     <Checkbox
                     edge="end"
-                    checked={value.isComplete}
+                    checked={value.completed}
                     onChange={this.handleToggle(index)}
                     />
                     <IconButton edge="end" aria-label="edit" onClick={this.editTodo(index)}>
